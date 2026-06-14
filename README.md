@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Spreetail — Shared Expense Management
 
-## Getting Started
+A full-stack web application for tracking, splitting, and settling shared expenses among flatmates. Built for the June 2026 assignment.
 
-First, run the development server:
+---
+
+## What It Does
+
+- **Group Management** — Create expense groups with multiple members, track who joined and who left
+- **Expense Tracking** — Log expenses with equal, unequal, percentage, or share-based splits
+- **Multi-Currency** — Supports INR and USD with exchange rate tracking (₹84/$1)
+- **Balance Computation** — Real-time net balances with debt simplification (minimises transactions needed)
+- **Settlement Recording** — Mark debts as paid; balances update instantly
+- **Member Timeline** — Expenses respect membership windows (member who left in March shouldn't be in April splits)
+- **CSV Import** — 5-step import flow with 14-type anomaly detection, manual review, and commit
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript 5 |
+| Database | PostgreSQL via Neon (serverless) |
+| ORM | Prisma 7 with `@prisma/adapter-pg` |
+| Auth | NextAuth v4 (Credentials provider, bcryptjs) |
+| Styling | Vanilla CSS (custom design system, no Tailwind) |
+| Validation | Zod v4 |
+| Deployment | Vercel |
+
+---
+
+## Local Setup
+
+### Prerequisites
+- Node.js 20+
+- A PostgreSQL database (or use the Neon connection string in `.env`)
+
+### Steps
 
 ```bash
+# 1. Clone the repo
+git clone https://github.com/aasthamuskan/spreetail.git
+cd spreetail
+
+# 2. Install dependencies
+npm install
+
+# 3. Create .env file
+cp .env.example .env
+# Edit .env with your DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL
+
+# 4. Push the schema to your database
+npx prisma db push
+
+# 5. Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App will be running at **http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB?sslmode=require&schema=spreetail"
+NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-## Learn More
+> **Note on schema:** The `&schema=spreetail` param in `DATABASE_URL` is a Prisma convention. The `lib/prisma.ts` file strips this param before passing the URL to `pg.Pool` and sets `search_path` via the PostgreSQL `options` connection parameter.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+spreetail/
+├── app/
+│   ├── (app)/                  # Auth-protected routes
+│   │   ├── dashboard/          # Group list
+│   │   └── groups/[id]/
+│   │       ├── expenses/       # Expense list + detail + new
+│   │       ├── balances/       # Net balances + per-member breakdown
+│   │       ├── settlements/    # Record payments
+│   │       ├── members/        # Member timeline
+│   │       └── import/         # CSV import wizard
+│   ├── api/                    # REST API routes
+│   ├── login/
+│   └── register/
+├── lib/
+│   ├── auth.ts                 # NextAuth config
+│   ├── balance-calculator.ts  # Core financial logic
+│   ├── csv-parser.ts          # Anomaly detection engine
+│   ├── currency.ts            # Conversion utilities
+│   └── prisma.ts              # Database client
+├── prisma/
+│   └── schema.prisma          # Database schema
+└── components/
+    └── layout/Sidebar.tsx
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## AI Tools Used
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`AI_USAGE.md`](./AI_USAGE.md) for full details.
+
+**Primary AI:** Google Gemini (Antigravity IDE)  
+**Used for:** Architecture design, boilerplate generation, anomaly detection logic, balance calculation algorithm, Prisma schema design, debugging the Neon schema routing bug.
