@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendEmail, groupInviteEmail } from '@/lib/email'
 
 export async function GET(
   req: NextRequest,
@@ -52,6 +53,17 @@ export async function POST(
     },
     include: { user: { select: { id: true, name: true, email: true } } },
   })
+
+  // Send notification email to the newly added member
+  const group = await prisma.group.findUnique({ where: { id }, select: { name: true } })
+  if (group && user.email) {
+    const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    sendEmail({
+      to: user.email,
+      subject: `You've been added to "${group.name}" on Spreetail`,
+      html: groupInviteEmail(user.name, session.user.name ?? 'Someone', group.name, appUrl),
+    }).catch(() => {})
+  }
 
   return NextResponse.json(member, { status: 201 })
 }

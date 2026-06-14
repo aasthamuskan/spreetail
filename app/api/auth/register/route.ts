@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { sendEmail, welcomeEmail } from '@/lib/email'
 
 const RegisterSchema = z.object({
   name: z.string().min(2).max(50),
@@ -26,6 +25,13 @@ export async function POST(req: NextRequest) {
       data: { name: data.name, email: data.email, passwordHash },
       select: { id: true, name: true, email: true },
     })
+
+    // Send welcome email (non-blocking)
+    sendEmail({
+      to: user.email,
+      subject: 'Welcome to Spreetail! 🎉',
+      html: welcomeEmail(user.name),
+    }).catch(() => {}) // don't fail registration if email fails
 
     return NextResponse.json(user, { status: 201 })
   } catch (err) {
