@@ -54,7 +54,7 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
-            {groups.map((group) => (
+            {groups.map((group: typeof groups[number]) => (
               <Link
                 key={group.id}
                 href={`/groups/${group.id}`}
